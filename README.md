@@ -21,21 +21,27 @@ A lightweight **AnythingLLM Custom Skill** that lets your LLM run pre‑defined 
 
 ## 📦 Quick Start (Docker – separate container)
 
-```bash
+
 # 1️⃣ Clone the repo
+```
 git clone https://github.com/your‑org/axai-mysql-streamer.git
 cd axai-mysql-streamer
+```
 
 # 2️⃣ Copy the sample env file and edit the values
+```
 cp .env.example .env
 #   Edit .env → set DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, etc.
+```
 
 # 3️⃣ Build & run the container
 docker compose up -d   # (or docker build & docker run, see INSTALL.md)
 
 # 4️⃣ Verify the service is alive
+```
 curl http://localhost:3000/health
 # → {"status":"ok","version":"1.0.0"}
+```
 
 # 🛠️ How to Use It Inside AnythingLLM
 1. Open AnythingLLM → Settings → Custom Skills.
@@ -52,13 +58,15 @@ Now you can call the skill from any chat, e.g.:
 
 The LLM will send the request, the skill streams the rows back, and the model can continue the conversation with the data.
 
-# 🔧 Extending the Skill
+---
+
+## 🔧 Extending the Skill
 1. Add a new SQL file to queries/ (e.g., GetTopProducts.sql).
 2. (Optional) Add a description in the file’s first comment line – this will be shown in the skill’s UI.
 3. Reload the manifest in AnythingLLM (Settings → Custom Skills → Reload).
 4. The new action is instantly available – no container rebuild needed.
 
-# 🛡️ Security & Best Practices
+## 🛡️ Security & Best Practices
 | Recommendation | Why |
 | ------- | ----------- |
 |ever store production credentials in the repo – keep them only in .env or Docker secrets.||
@@ -68,8 +76,12 @@ The LLM will send the request, the skill streams the rows back, and the model ca
 |Limit query runtime – add max_execution_time in MySQL or enforce a timeout in the Node wrapper.||
 | ------- | ----------- |
 
-# 📜 License
+---
+
+## 📜 License
 MIT License – feel free to fork, adapt, and contribute back!
 
-# 🙏 Acknowledgements
+---
+
+## 🙏 Acknowledgements
 Thanks to the AnythingLLM community for providing the custom‑skill framework and to the open‑source ecosystem that makes building lightweight data bridges possible.
