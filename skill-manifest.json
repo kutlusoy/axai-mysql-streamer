@@ -1,0 +1,39 @@
+
+{
+  "name": "AxAI MySQL Streamer",
+  "author": "Ali Kutlusoy",
+  "description": "Execute pre‑defined MySQL queries and stream results back to AnythingLLM.",
+  "version": "1.0.0",
+  "website": "https://axai.at",
+  "entrypoint": "/",
+  "type": "custom_skill",
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/run",
+      "description": "Run a pre‑defined query and stream the result as JSON array.",
+      "requestSchema": {
+        "type": "object",
+        "properties": {
+          "queryKey": {
+            "type": "string",
+            "description": "Key of the query to execute (see queries folder)."
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Optional key/value pairs that will be bound to the query.",
+            "additionalProperties": true
+          }
+        },
+        "required": ["queryKey"]
+      },
+      "responseSchema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "description": "One row of the result set."
+        }
+      }
+    }
+  ]
+}
