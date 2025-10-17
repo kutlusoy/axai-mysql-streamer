@@ -22,28 +22,28 @@ A lightweight **AnythingLLM Custom Skill** that lets your LLM run pre‑defined 
 ## 📦 Quick Start (Docker – separate container)
 
 
-# 1️⃣ Clone the repo
+### 1️⃣ Clone the repo
 ```
 git clone https://github.com/your‑org/axai-mysql-streamer.git
 cd axai-mysql-streamer
 ```
 
-# 2️⃣ Copy the sample env file and edit the values
+### 2️⃣ Copy the sample env file and edit the values
 ```
 cp .env.example .env
 #   Edit .env → set DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, etc.
 ```
 
-# 3️⃣ Build & run the container
+### 3️⃣ Build & run the container
 docker compose up -d   # (or docker build & docker run, see INSTALL.md)
 
-# 4️⃣ Verify the service is alive
+### 4️⃣ Verify the service is alive
 ```
 curl http://localhost:3000/health
 # → {"status":"ok","version":"1.0.0"}
 ```
 
-# 🛠️ How to Use It Inside AnythingLLM
+## 🛠️ How to Use It Inside AnythingLLM
 1. Open AnythingLLM → Settings → Custom Skills.
 2. Click “Add New Skill”.
 3. Manifest URL – http://<host-or-ip>:3000/skill-manifest.json If you run the skill in the same container, use http://host.docker.internal:3000/skill-manifest.json.
@@ -69,13 +69,11 @@ The LLM will send the request, the skill streams the rows back, and the model ca
 ## 🛡️ Security & Best Practices
 | Recommendation | Why |
 | ------- | ----------- |
-|ever store production credentials in the repo – keep them only in .env or Docker secrets.||
+|Never store production credentials in the repo – keep them only in .env or Docker secrets.||
 |Use a dedicated MySQL user with only SELECT privileges for the tables you need.||
 |Restrict network access – expose port 3000 only to the host or internal Docker network.||
 |Enable TLS on your MySQL server and set DB_SSL=true if needed.||
 |Limit query runtime – add max_execution_time in MySQL or enforce a timeout in the Node wrapper.||
-| ------- | ----------- |
-
 ---
 
 ## 📜 License
