@@ -8,41 +8,6 @@
 --   3️⃣  end_date      (DATE) – End of the period (inclusive).
 -- ------------------------------------------------------------
 
--- Datumsformatierung für verschiedene Eingabeformate
-SET @start_input = '{{start_date}}';
-SET @end_input = '{{end_date}}';
-
--- Funktion zur Erkennung und Umwandlung verschiedener Datumsformate
-SET @start_date_formatted = CASE
-    -- Format: DD.MM.YYYY -> YYYY-MM-DD
-    WHEN @start_input REGEXP '^[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}$' THEN
-        DATE_FORMAT(STR_TO_DATE(@start_input, '%d.%m.%Y'), '%Y-%m-%d')
-    -- Format: YYYY-MM-DD (bereits korrekt)
-    WHEN @start_input REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
-        @start_input
-    -- Format: YYYY-MM (ergänze zum Monatsende)
-    WHEN @start_input REGEXP '^[0-9]{4}-[0-9]{2}$' THEN
-        DATE_FORMAT(LAST_DAY(CONCAT(@start_input, '-01')), '%Y-%m-%d')
-    -- Standard: Eingabe direkt verwenden (kann angepasst werden)
-    ELSE @start_input
-END;
-
-SET @end_date_formatted = CASE
-    -- Format: DD.MM.YYYY -> YYYY-MM-DD
-    WHEN @end_input REGEXP '^[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}$' THEN
-        DATE_FORMAT(STR_TO_DATE(@end_input, '%d.%m.%Y'), '%Y-%m-%d')
-    -- Format: YYYY-MM-DD (bereits korrekt)
-    WHEN @end_input REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
-        @end_input
-    -- Format: YYYY-MM (ergänze zum Monatsende)
-    WHEN @end_input REGEXP '^[0-9]{4}-[0-9]{2}$' THEN
-        DATE_FORMAT(LAST_DAY(CONCAT(@end_input, '-01')), '%Y-%m-%d')
-    -- Standard: Eingabe direkt verwenden
-    ELSE @end_input
-END;
-
-SET @suchstring = '{{Kundenname}}';
-
 SELECT 
     J.REC_ID AS ID,
     CONCAT_WS('', J.QUELLE) AS QUELLE,
@@ -97,10 +62,6 @@ FROM
     LEFT JOIN JOURNALPOS JP ON JP.JOURNAL_ID = J.REC_ID
     LEFT OUTER JOIN ADRESSEN_LIEF AD ON AD.REC_ID = J.LIEF_ADDR_ID
     INNER JOIN ADRESSEN ON ADRESSEN.REC_ID = J.ADDR_ID
-    LEFT OUTER JOIN KARTEN K ON (K.ID = ADRESSEN.REC_ID AND K.TYP = 'K')
-    LEFT OUTER JOIN LAND L ON L.ID = ADRESSEN.LAND
-    LEFT JOIN VERTRETER V ON V.VERTRETER_ID = ADRESSEN.VERTRETER_ID
-    LEFT JOIN MITARBEITER M ON M.MA_ID = ADRESSEN.MA_ID
 WHERE 
     J.QUELLE = 1 
     AND J.STADIUM <> 127 
@@ -108,24 +69,12 @@ WHERE
     -- Dynamische Suche nach allen Wörtern im Suchstring
     AND (
         -- Prüfe ob alle Wörter aus dem Suchstring im Kundennamen vorkommen
-        UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(@suchstring, ' ', 1), '%')
-        AND (CASE 
-            WHEN CHAR_LENGTH(@suchstring) - CHAR_LENGTH(REPLACE(@suchstring, ' ', '')) >= 1 THEN
-                UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(SUBSTRING_INDEX(@suchstring, ' ', 2), ' ', -1), '%')
-            ELSE TRUE
-        END)
-        AND (CASE 
-            WHEN CHAR_LENGTH(@suchstring) - CHAR_LENGTH(REPLACE(@suchstring, ' ', '')) >= 2 THEN
-                UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(SUBSTRING_INDEX(@suchstring, ' ', 3), ' ', -1), '%')
-            ELSE TRUE
-        END)
-        AND (CASE 
-            WHEN CHAR_LENGTH(@suchstring) - CHAR_LENGTH(REPLACE(@suchstring, ' ', '')) >= 3 THEN
-                UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(SUBSTRING_INDEX(@suchstring, ' ', 4), ' ', -1), '%')
-            ELSE TRUE
-        END)
+        UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word1, '%')
+        AND (:word2 IS NULL OR UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word2, '%'))
+        AND (:word3 IS NULL OR UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word3, '%'))
+        AND (:word4 IS NULL OR UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word4, '%'))
     )
-    AND J.RDATUM BETWEEN STR_TO_DATE(@start_date_formatted, '%Y-%m-%d') AND STR_TO_DATE(@end_date_formatted, '%Y-%m-%d')
+    AND J.RDATUM BETWEEN :start_date AND :end_date
     AND J.STADIUM BETWEEN 1 AND 127
 GROUP BY 
     J.REC_ID

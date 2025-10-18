@@ -1,4 +1,3 @@
-
 // ──────────────────────────────────────────────────────────────
 // AxAI MySQL Streamer – AnythingLLM Custom Skill
 // Author: Ali Kutlusoy (https://axai.at)
@@ -63,10 +62,50 @@ async function loadQuery(queryKey) {
 }
 
 // ------------------------------------------------------------------
+// Helper: Parse German date formats to YYYY-MM-DD
+// ------------------------------------------------------------------
+function parseDate(input) {
+  if (!input) return null;
+
+  // Format: DD.MM.YYYY
+  if (input.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) {
+    const [day, month, year] = input.split('.');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  // Format: YYYY-MM
+  if (input.match(/^\d{4}-\d{2}$/)) {
+    return `${input}-01`; // oder auf Monatsende erweitern
+  }
+
+  // Format: YYYY-MM-DD (bereits korrekt)
+  if (input.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return input;
+  }
+
+  return input; // Fallback
+}
+
+// ------------------------------------------------------------------
+// Helper: Split customer name into words for search
+// ------------------------------------------------------------------
+function splitCustomerName(name) {
+  if (!name) return { word1: null, word2: null, word3: null, word4: null };
+
+  const words = name.trim().split(/\s+/);
+  return {
+    word1: words[0] || null,
+    word2: words[1] || null,
+    word3: words[2] || null,
+    word4: words[3] || null,
+  };
+}
+
+// ------------------------------------------------------------------
 // Endpoint: POST /run
 // ------------------------------------------------------------------
 app.post("/run", async (req, res) => {
-  const { queryKey, parameters = {} } = req.body;
+  let { queryKey, parameters = {} } = req.body;
 
   if (!queryKey) {
     return res.status(400).json({ error: "`queryKey` is required" });
@@ -76,20 +115,40 @@ app.post("/run", async (req, res) => {
     // 1️⃣ Load the SQL text
     const sql = await loadQuery(queryKey);
 
-    // 2️⃣ Execute the query using the pool
+    // 2️⃣ Handle date conversion
+    if (parameters.start_date) {
+      parameters.start_date = parseDate(parameters.start_date);
+    }
+    if (parameters.end_date) {
+      parameters.end_date = parseDate(parameters.end_date);
+    }
+
+    // 3️⃣ Set default dates to current year if not provided
+    const currentYear = new Date().getFullYear();
+    if (!parameters.start_date) {
+      parameters.start_date = `${currentYear}-01-01`;
+    }
+    if (!parameters.end_date) {
+      parameters.end_date = `${currentYear}-12-31`;
+    }
+
+    // 4️⃣ Handle customer name splitting
+    if (parameters.Kundenname) {
+      const words = splitCustomerName(parameters.Kundenname);
+      parameters = { ...parameters, ...words };
+    }
+
+    // 5️⃣ Execute the query using the pool
     const [rows] = await pool.execute(sql, parameters);
 
-    // 3️⃣ Stream the rows as a JSON array (useful for large results)
-    // 3a – set proper headers
+    // 6️⃣ Stream the rows as a JSON array
     res.setHeader("Content-Type", "application/json");
-    // 3b – start array
     res.write("[");
     for (let i = 0; i < rows.length; i++) {
       const chunk = JSON.stringify(rows[i]);
       if (i > 0) res.write(`,${chunk}`);
       else res.write(chunk);
     }
-    // 3c – close array
     res.write("]");
     res.end();
   } catch (err) {

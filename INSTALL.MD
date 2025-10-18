@@ -28,7 +28,7 @@ Both options share the same environment‑variable configuration and use the sam
 ## 1️⃣ Clone the Repository  
 
 ```bash
-git clone https://github.com/your-org/axai-mysql-streamer.git
+git clone https://github.com/kutlusoy/axai-mysql-streamer.git
 cd axai-mysql-streamer
 ```
 

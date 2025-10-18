@@ -1,5 +1,5 @@
 -- ------------------------------------------------------------
--- Name: get_order_positions
+-- Name: get_cao_order_positions
 -- Databank: CAO-Faktura
 -- Description: Returns order positions matching search criteria with order headers
 -- Parameters:
@@ -10,44 +10,6 @@
 --   5️⃣  Ort           (STRING)  – Customer city search term (optional)
 --   6️⃣  Strasse       (STRING)  – Customer street search term (optional)
 -- ------------------------------------------------------------
-
--- Datumsformatierung für verschiedene Eingabeformate
-SET @start_input = '{{start_date}}';
-SET @end_input = '{{end_date}}';
-
--- Funktion zur Erkennung und Umwandlung verschiedener Datumsformate
-SET @start_date_formatted = CASE
-    -- Format: DD.MM.YYYY -> YYYY-MM-DD
-    WHEN @start_input REGEXP '^[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}$' THEN
-        DATE_FORMAT(STR_TO_DATE(@start_input, '%d.%m.%Y'), '%Y-%m-%d')
-    -- Format: YYYY-MM-DD (bereits korrekt)
-    WHEN @start_input REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
-        @start_input
-    -- Format: YYYY-MM (ergänze zum Monatsende)
-    WHEN @start_input REGEXP '^[0-9]{4}-[0-9]{2}$' THEN
-        DATE_FORMAT(LAST_DAY(CONCAT(@start_input, '-01')), '%Y-%m-%d')
-    -- Standard: Eingabe direkt verwenden (kann angepasst werden)
-    ELSE @start_input
-END;
-
-SET @end_date_formatted = CASE
-    -- Format: DD.MM.YYYY -> YYYY-MM-DD
-    WHEN @end_input REGEXP '^[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}$' THEN
-        DATE_FORMAT(STR_TO_DATE(@end_input, '%d.%m.%Y'), '%Y-%m-%d')
-    -- Format: YYYY-MM-DD (bereits korrekt)
-    WHEN @end_input REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
-        @end_input
-    -- Format: YYYY-MM (ergänze zum Monatsende)
-    WHEN @end_input REGEXP '^[0-9]{4}-[0-9]{2}$' THEN
-        DATE_FORMAT(LAST_DAY(CONCAT(@end_input, '-01')), '%Y-%m-%d')
-    -- Standard: Eingabe direkt verwenden
-    ELSE @end_input
-END;
-
-SET @kunden_suchstring = '{{Kundenname}}';
-SET @bezeichnung_suchstring = '{{Bezeichnung}}';
-SET @ort_suchstring = COALESCE('{{Ort}}', '');
-SET @strasse_suchstring = COALESCE('{{Strasse}}', '');
 
 SELECT 
     j.REC_ID AS 'Auftrags ID',
@@ -84,33 +46,21 @@ FROM JOURNALPOS jp
 INNER JOIN JOURNAL j ON jp.VRENUM = j.VRENUM AND jp.QUELLE = j.QUELLE 
 INNER JOIN ADRESSEN ON ADRESSEN.REC_ID = j.ADDR_ID
 WHERE 
-    jp.QUELLE = 3 
+    jp.QUELLE = 8
     AND jp.VRENUM NOT LIKE '%storno%'
     -- Dynamische Kundensuche nach allen Wörtern im Suchstring
     AND (
-        UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(@kunden_suchstring, ' ', 1), '%')
-        AND (CASE 
-            WHEN CHAR_LENGTH(@kunden_suchstring) - CHAR_LENGTH(REPLACE(@kunden_suchstring, ' ', '')) >= 1 THEN
-                UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(SUBSTRING_INDEX(@kunden_suchstring, ' ', 2), ' ', -1), '%')
-            ELSE TRUE
-        END)
-        AND (CASE 
-            WHEN CHAR_LENGTH(@kunden_suchstring) - CHAR_LENGTH(REPLACE(@kunden_suchstring, ' ', '')) >= 2 THEN
-                UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(SUBSTRING_INDEX(@kunden_suchstring, ' ', 3), ' ', -1), '%')
-            ELSE TRUE
-        END)
-        AND (CASE 
-            WHEN CHAR_LENGTH(@kunden_suchstring) - CHAR_LENGTH(REPLACE(@kunden_suchstring, ' ', '')) >= 3 THEN
-                UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', SUBSTRING_INDEX(SUBSTRING_INDEX(@kunden_suchstring, ' ', 4), ' ', -1), '%')
-            ELSE TRUE
-        END)
+        UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word1, '%')
+        AND (:word2 IS NULL OR UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word2, '%'))
+        AND (:word3 IS NULL OR UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word3, '%'))
+        AND (:word4 IS NULL OR UPPER(TRIM(CONCAT_WS(' ', ADRESSEN.ANREDE, ADRESSEN.NAME1, ADRESSEN.NAME2, ADRESSEN.NAME3, ADRESSEN.ABTEILUNG))) LIKE CONCAT('%', :word4, '%'))
     )
     -- Bezeichnungssuche
-    AND UPPER(jp.BEZEICHNUNG) LIKE CONCAT('%', UPPER(@bezeichnung_suchstring), '%')
+    AND UPPER(jp.BEZEICHNUNG) LIKE CONCAT('%', :Bezeichnung, '%')
     -- Datumsbereich
-    AND j.RDATUM BETWEEN STR_TO_DATE(@start_date_formatted, '%Y-%m-%d') AND STR_TO_DATE(@end_date_formatted, '%Y-%m-%d')
+    AND j.RDATUM BETWEEN :start_date AND :end_date
     -- Ortsfilter (optional)
-    AND (LENGTH(@ort_suchstring) = 0 OR UPPER(j.KUN_ORT) LIKE CONCAT('%', UPPER(@ort_suchstring), '%'))
+    AND (:Ort IS NULL OR UPPER(j.KUN_ORT) LIKE CONCAT('%', :Ort, '%'))
     -- Straßenfilter (optional)
-    AND (LENGTH(@strasse_suchstring) = 0 OR UPPER(j.KUN_STRASSE) LIKE CONCAT('%', UPPER(@strasse_suchstring), '%'))
+    AND (:Strasse IS NULL OR UPPER(j.KUN_STRASSE) LIKE CONCAT('%', :Strasse, '%'))
 ORDER BY jp.VRENUM, jp.POSITION;
