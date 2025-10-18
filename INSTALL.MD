@@ -161,7 +161,7 @@ If you used Option B (same container), replace 3000 with the port you exposed 
 02. Click “Add New Skill”.
 03. Fill in the form:
     - **Skill Name** – AxAI MySQL Streamer (or whatever you set in .env).
-    - **Manifest URL** – http://<HOST_OR_IP>:3000/skill-manifest.json
+    - **Manifest URL** – http://<HOST_OR_IP>:3000/skill-manifest.json\n
         If you used the same container: http://host.docker.internal:3000/skill-manifest.json
     - **Endpoint URL** – http://<HOST_OR_IP>:3000/run (same rule as above).
 04. Click Save. AnythingLLM will fetch the manifest, list all .sql files found in queries/, and make them callable from chat.
