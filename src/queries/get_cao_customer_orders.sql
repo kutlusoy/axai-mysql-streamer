@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------
--- Name: get_cao_customer_invoices
+-- Name: get_cao_customer_orders
 -- Databank: CAO-Faktura
--- Description: Returns all invoices for a given customer within a date range.
+-- Description: Returns all orders for a given customer within a date range.
 -- Parameters:
 --   1️⃣  Kundenname    (STRING)  – The Cutomername.
 --   2️⃣  start_date    (DATE) – Beginning of the period (inclusive).
@@ -49,10 +49,9 @@ SET @suchstring = '{{Kundenname}}';
 SELECT 
     J.REC_ID AS ID,
     CONCAT_WS('', J.QUELLE) AS QUELLE,
-    J.AGBNUM AS 'initial Angebot',
-    J.ATRNUM AS 'initial Auftrag',
-    J.VRENUM AS 'Rechnungsnummer',
-    J.RDATUM AS 'Rechnungsdatum',
+    J.AGBNUM AS 'durch Angebot',
+    J.VRENUM AS 'Auftragsnummer',
+    J.RDATUM AS 'Auftragsdatum',
     CONCAT_WS(' ', J.KUN_NAME1, J.KUN_NAME2, J.KUN_NAME3) AS 'Kunden Name',
     J.ADDR_ID as 'Adressen ID',
     J.NSUMME as 'Netto Summe',
@@ -104,7 +103,7 @@ FROM
     LEFT JOIN VERTRETER V ON V.VERTRETER_ID = ADRESSEN.VERTRETER_ID
     LEFT JOIN MITARBEITER M ON M.MA_ID = ADRESSEN.MA_ID
 WHERE 
-    J.QUELLE IN (3, 4) 
+    J.QUELLE = 8 
     AND J.STADIUM <> 127 
     AND J.TERM_ID <> 99999 
     -- Dynamische Suche nach allen Wörtern im Suchstring

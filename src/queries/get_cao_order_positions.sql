@@ -1,7 +1,7 @@
 -- ------------------------------------------------------------
--- Name: get_invoice_positions
+-- Name: get_order_positions
 -- Databank: CAO-Faktura
--- Description: Returns invoice positions matching search criteria with invoice headers
+-- Description: Returns order positions matching search criteria with order headers
 -- Parameters:
 --   1️⃣  Kundenname    (STRING)  – Customer name search term
 --   2️⃣  Bezeichnung   (STRING)  – Position description search term  
@@ -50,9 +50,9 @@ SET @ort_suchstring = COALESCE('{{Ort}}', '');
 SET @strasse_suchstring = COALESCE('{{Strasse}}', '');
 
 SELECT 
-    j.REC_ID AS 'Rechnung ID',
-    jp.VRENUM as 'Rechnungsnummer',
-    DATE_FORMAT(j.RDATUM, '%d.%m.%Y') as 'Rechnung Datum',
+    j.REC_ID AS 'Auftrags ID',
+    jp.VRENUM as 'Auftragsnummer',
+    DATE_FORMAT(j.RDATUM, '%d.%m.%Y') as 'Auftrags Datum',
     j.KUN_NUM as 'Kundennummer',
     CONCAT_WS(' ', j.KUN_NAME1, j.KUN_NAME2, j.KUN_NAME3) as 'Kundenname',
     j.KUN_ORT as 'Kunden Ort',

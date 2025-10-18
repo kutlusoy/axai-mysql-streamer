@@ -11,10 +11,43 @@
 --   6️⃣  Strasse       (STRING)  – Customer street search term (optional)
 -- ------------------------------------------------------------
 
-SET @kunden_suchstring = {{Kundenname}};
-SET @bezeichnung_suchstring = {{Bezeichnung}};
-SET @ort_suchstring = COALESCE({{Ort}}, '');
-SET @strasse_suchstring = COALESCE({{Strasse}}, '');
+-- Datumsformatierung für verschiedene Eingabeformate
+SET @start_input = '{{start_date}}';
+SET @end_input = '{{end_date}}';
+
+-- Funktion zur Erkennung und Umwandlung verschiedener Datumsformate
+SET @start_date_formatted = CASE
+    -- Format: DD.MM.YYYY -> YYYY-MM-DD
+    WHEN @start_input REGEXP '^[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}$' THEN
+        DATE_FORMAT(STR_TO_DATE(@start_input, '%d.%m.%Y'), '%Y-%m-%d')
+    -- Format: YYYY-MM-DD (bereits korrekt)
+    WHEN @start_input REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
+        @start_input
+    -- Format: YYYY-MM (ergänze zum Monatsende)
+    WHEN @start_input REGEXP '^[0-9]{4}-[0-9]{2}$' THEN
+        DATE_FORMAT(LAST_DAY(CONCAT(@start_input, '-01')), '%Y-%m-%d')
+    -- Standard: Eingabe direkt verwenden (kann angepasst werden)
+    ELSE @start_input
+END;
+
+SET @end_date_formatted = CASE
+    -- Format: DD.MM.YYYY -> YYYY-MM-DD
+    WHEN @end_input REGEXP '^[0-9]{1,2}\\.[0-9]{1,2}\\.[0-9]{4}$' THEN
+        DATE_FORMAT(STR_TO_DATE(@end_input, '%d.%m.%Y'), '%Y-%m-%d')
+    -- Format: YYYY-MM-DD (bereits korrekt)
+    WHEN @end_input REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
+        @end_input
+    -- Format: YYYY-MM (ergänze zum Monatsende)
+    WHEN @end_input REGEXP '^[0-9]{4}-[0-9]{2}$' THEN
+        DATE_FORMAT(LAST_DAY(CONCAT(@end_input, '-01')), '%Y-%m-%d')
+    -- Standard: Eingabe direkt verwenden
+    ELSE @end_input
+END;
+
+SET @kunden_suchstring = '{{Kundenname}}';
+SET @bezeichnung_suchstring = '{{Bezeichnung}}';
+SET @ort_suchstring = COALESCE('{{Ort}}', '');
+SET @strasse_suchstring = COALESCE('{{Strasse}}', '');
 
 SELECT 
     j.REC_ID AS 'Angebot ID',
@@ -32,11 +65,18 @@ SELECT
     jp.BEZEICHNUNG as 'Bezeichnung',
     j.STADIUM as 'Status',
     CASE 
-        WHEN j.STADIUM = 1 THEN 'In Bearbeitung'
-        WHEN j.STADIUM = 2 THEN 'Offen'
-        WHEN j.STADIUM = 3 THEN 'Erledigt'
-        WHEN j.STADIUM = 8 THEN 'Angenommen mit Skonto'
-        WHEN j.STADIUM = 9 THEN 'Angenommen'
+        WHEN J.STADIUM = 0 THEN 'In Bearbeitung'
+        WHEN J.STADIUM = 1 THEN 'Lieferschein gedruckt'
+        WHEN J.STADIUM = 2 THEN 'Offen'
+        WHEN J.STADIUM = 3 THEN '1x gemahnt'
+        WHEN J.STADIUM = 4 THEN '2x gemahnt'
+        WHEN J.STADIUM = 5 THEN '3x gemahnt'
+        WHEN J.STADIUM = 6 THEN 'INKASSO'
+        WHEN J.STADIUM = 7 THEN 'Teilzahlung'
+        WHEN J.STADIUM = 8 THEN 'Bezahlt mit Skonto'
+        WHEN J.STADIUM = 9 THEN 'Bezahlt'
+        WHEN J.STADIUM = 11 THEN 'Angewiesen (Überweisung/Lastschrift)'
+        WHEN J.STADIUM = 127 THEN 'Storno'
         ELSE 'Unbekannt'
     END AS 'Status Text',
     j.WAEHRUNG as 'Währung'
@@ -68,7 +108,7 @@ WHERE
     -- Bezeichnungssuche
     AND UPPER(jp.BEZEICHNUNG) LIKE CONCAT('%', UPPER(@bezeichnung_suchstring), '%')
     -- Datumsbereich
-    AND j.RDATUM BETWEEN {{start_date}} AND {{end_date}}
+    AND j.RDATUM BETWEEN STR_TO_DATE(@start_date_formatted, '%Y-%m-%d') AND STR_TO_DATE(@end_date_formatted, '%Y-%m-%d')
     -- Ortsfilter (optional)
     AND (LENGTH(@ort_suchstring) = 0 OR UPPER(j.KUN_ORT) LIKE CONCAT('%', UPPER(@ort_suchstring), '%'))
     -- Straßenfilter (optional)
