@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  anything-llm:
+    image: anythingllm/anythingllm:latest
+    container_name: anything-llm
+    ports:
+      - "3001:3001"               # AnythingLLM UI
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./anything-llm-data:/app/data
+    depends_on:
+      - axai-mysql-streamer
+
+  axai-mysql-streamer:
+    build: .
+    container_name: axai-mysql-streamer
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env                     # <-- your MySQL credentials go here
+    restart: unless-stopped
