@@ -14,7 +14,7 @@ RUN npm ci --omit=dev
 # Copy source code
 COPY src ./src
 COPY skill-manifest.json ./
-COPY .env.example ./.env   # you can keep a template .env in repo
+COPY .env.example ./env.example
 
 # ---------- Runtime ----------
 FROM node:20-alpine
