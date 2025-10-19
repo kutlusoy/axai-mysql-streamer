@@ -1,5 +1,4 @@
--- ------------------------------------------------------------
--- Name: get_cao_offer_positions
+-- queryKey: get_cao_offer_positions
 -- Databank: CAO-Faktura
 -- Description: Returns offer positions matching search criteria with offer headers
 -- Parameters:

@@ -1,5 +1,4 @@
--- ------------------------------------------------------------
--- Name: get_cao_customer_orders
+-- queryKey: get_cao_customer_orders
 -- Databank: CAO-Faktura
 -- Description: Returns all orders for a given customer within a date range.
 -- Parameters:

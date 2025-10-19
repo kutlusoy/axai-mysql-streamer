@@ -1,5 +1,4 @@
--- ------------------------------------------------------------
--- Name: get_cao_customer_offers
+-- queryKey: get_cao_customer_offers
 -- Databank: CAO-Faktura
 -- Description: Returns all offers for a given customer within a date range.
 -- Parameters:

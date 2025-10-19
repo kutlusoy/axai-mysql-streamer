@@ -1,5 +1,4 @@
--- ------------------------------------------------------------
--- Name: get_cao_customer_invoices
+-- queryKey: get_cao_customer_invoices
 -- Databank: CAO-Faktura
 -- Description: Returns all invoices for a given customer within a date range.
 -- Parameters:

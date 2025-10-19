@@ -1,5 +1,4 @@
--- ------------------------------------------------------------
--- Name: get_cao_invoice_positions
+-- queryKey: get_cao_invoice_positions
 -- Databank: CAO-Faktura
 -- Description: Returns invoice positions matching search criteria with invoice headers
 -- Parameters:

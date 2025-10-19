@@ -33,8 +33,6 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 50,
   queueLimit: 0,
-  // Enable named placeholders for easier binding:
-  // e.g. SELECT * FROM users WHERE id = :userId
   namedPlaceholders: true,
 });
 
@@ -75,7 +73,7 @@ function parseDate(input) {
 
   // Format: YYYY-MM
   if (input.match(/^\d{4}-\d{2}$/)) {
-    return `${input}-01`; // oder auf Monatsende erweitern
+    return `${input}-01`;
   }
 
   // Format: YYYY-MM-DD (bereits korrekt)
@@ -100,6 +98,20 @@ function splitCustomerName(name) {
     word4: words[3] || null,
   };
 }
+
+// ------------------------------------------------------------------
+// Endpoint: GET / (Health Check)
+// ------------------------------------------------------------------
+app.get("/", (req, res) => {
+  res.json({ status: "ok", version: "1.0.0" });
+});
+
+// ------------------------------------------------------------------
+// Endpoint: GET /skill-manifest.json (used by AnythingLLM)
+// ------------------------------------------------------------------
+app.get("/skill-manifest.json", (req, res) => {
+  res.sendFile(path.resolve("skill-manifest.json"));
+});
 
 // ------------------------------------------------------------------
 // Endpoint: POST /run
@@ -155,13 +167,6 @@ app.post("/run", async (req, res) => {
     logger.error(err, "Failed to run query");
     res.status(500).json({ error: err.message });
   }
-});
-
-// ------------------------------------------------------------------
-// Health check (AnythingLLM uses this for service discovery)
-// ------------------------------------------------------------------
-app.get("/", (req, res) => {
-  res.json({ status: "ok", version: "1.0.0" });
 });
 
 // ------------------------------------------------------------------
