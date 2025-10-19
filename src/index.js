@@ -31,7 +31,7 @@ const pool = mysql.createPool({
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
   waitForConnections: true,
-  connectionLimit: 500,
+  connectionLimit: 50,
   queueLimit: 0,
   namedPlaceholders: true,
 });
@@ -60,28 +60,48 @@ async function loadQuery(queryKey) {
 }
 
 // ------------------------------------------------------------------
-// Helper: Parse German date formats to YYYY-MM-DD
+// Helper: Parse German date formats to YYYY-MM-DD and handle time ranges
 // ------------------------------------------------------------------
-function parseDate(input) {
+function parseDate(input, isEndDate = false) {
   if (!input) return null;
 
+  // Remove any existing time components
+  let dateStr = input.split(' ')[0];
+  
   // Format: DD.MM.YYYY
-  if (input.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) {
-    const [day, month, year] = input.split('.');
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  if (dateStr.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) {
+    const [day, month, year] = dateStr.split('.');
+    dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
   // Format: YYYY-MM
-  if (input.match(/^\d{4}-\d{2}$/)) {
-    return `${input}-01`;
+  if (dateStr.match(/^\d{4}-\d{2}$/)) {
+    if (isEndDate) {
+      return `${dateStr}-31`; // Let MySQL handle month end
+    }
+    return `${dateStr}-01`;
   }
 
-  // Format: YYYY-MM-DD (bereits korrekt)
-  if (input.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return input;
+  // Format: YYYY-MM-DD (already correct)
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    // Already in correct format
+  } else {
+    // Try to parse other formats
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
+    }
   }
 
-  return input; // Fallback
+  // Add time component for proper datetime comparison
+  if (isEndDate) {
+    return `${dateStr} 23:59:59`;
+  } else {
+    return `${dateStr} 00:00:00`;
+  }
 }
 
 // ------------------------------------------------------------------
@@ -127,21 +147,21 @@ app.post("/run", async (req, res) => {
     // 1️⃣ Load the SQL text
     const sql = await loadQuery(queryKey);
 
-    // 2️⃣ Handle date conversion
+    // 2️⃣ Handle date conversion with proper time ranges
     if (parameters.start_date) {
-      parameters.start_date = parseDate(parameters.start_date);
+      parameters.start_date = parseDate(parameters.start_date, false);
     }
     if (parameters.end_date) {
-      parameters.end_date = parseDate(parameters.end_date);
+      parameters.end_date = parseDate(parameters.end_date, true);
     }
 
     // 3️⃣ Set default dates to current year if not provided
     const currentYear = new Date().getFullYear();
     if (!parameters.start_date) {
-      parameters.start_date = `${currentYear}-01-01`;
+      parameters.start_date = `${currentYear}-01-01 00:00:00`;
     }
     if (!parameters.end_date) {
-      parameters.end_date = `${currentYear}-12-31`;
+      parameters.end_date = `${currentYear}-12-31 23:59:59`;
     }
 
     // 4️⃣ Handle customer name splitting
