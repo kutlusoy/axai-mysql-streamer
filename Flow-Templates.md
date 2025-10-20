@@ -1,7 +1,12 @@
-# Flow Information
+# Flow Templates for AnythingLLM / AxAI MySQL Streamer
+Usage is simple.
 
-Flow Name: CAOAngebot
-Description
+---
+# For cao_
+## Flow Information
+
+**Flow Name:** CAOAngebot
+**Description**
 ```
 Suche nach Angebote. Zeige alle in einer Tabelle. Sei exakt wenn es um die Anzahl, Summen und andere Details geht. Du wirst nicht von den extrahierten Daten abweichen. Das ist sehr wichtig. 
 
@@ -10,13 +15,13 @@ Diese Abfrage nur durchführen, wenn ein Kundenname angegeben wird oder in der U
 Datumsformat: 2025-10-29 00:00:00
 ```
 
-# Flow Variables
+## Flow Variables
 Variables:
 Kundenname: (empty)
 start_date: (empty)
 end_date: (empty)
 
-# API Call
+## API Call
 URL: http://host.docker.internal:3000/run
 Method: Post
 Request Body:
@@ -30,5 +35,8 @@ Request Body:
    }
 }
 ```
+---
+
+
 
 
