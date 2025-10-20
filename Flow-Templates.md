@@ -2,7 +2,7 @@
 Use the templates to get formated and exact results for the *SQL* queries.
 
 ---
-## For *get_cao_customer_invoices*
+## <center>For *get_cao_customer_invoices*</center>
 
 ### Flow Information
 ---
